@@ -4,11 +4,17 @@ import dotenv from 'dotenv';
 import cardRoutes from './routes/cards.js';
 import sessionRoutes from './routes/sessions.js';
 import storyRoutes from './routes/story.js';
+import settingsRoutes from './routes/settings.js';
+import scriptRoutes from './routes/scripts.js';
+import { initializeScripts } from './scripts/index.js';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Initialize scripts
+initializeScripts();
 
 // Middleware
 app.use(cors());
@@ -18,6 +24,8 @@ app.use(express.json());
 app.use('/api/cards', cardRoutes);
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/story', storyRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/scripts', scriptRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

@@ -10,11 +10,13 @@
     "init-db": "node src/database/init.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "@anthropic-ai/sdk": "^0.71.2",
+    "@google/generative-ai": "^0.24.1",
     "cors": "^2.8.5",
-    "sql.js": "^1.10.3",
     "dotenv": "^16.3.1",
-    "openai": "^4.24.1"
+    "express": "^4.18.2",
+    "openai": "^4.24.1",
+    "sql.js": "^1.10.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

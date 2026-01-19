@@ -9,10 +9,17 @@ const TYPE_ICONS = {
   'Mood': '🎭'
 };
 
+const RARITY_COLORS = {
+  'Common': 'border-l-gray-400',
+  'Bronze': 'border-l-amber-600',
+  'Silver': 'border-l-gray-300',
+  'Gold': 'border-l-yellow-400'
+};
+
 function ActiveCardsPanel({ sessionId, activeCardIds = [], onCardsChange }) {
   const [allCards, setAllCards] = useState([]);
   const [activeCards, setActiveCards] = useState([]);
-  const [showCardSelector, setShowCardSelector] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
 
   useEffect(() => {
     loadCards();
@@ -37,6 +44,7 @@ function ActiveCardsPanel({ sessionId, activeCardIds = [], onCardsChange }) {
   };
 
   const handleActivateCard = async (cardId) => {
+    if (activeCardIds.includes(cardId)) return; // Already active
     try {
       await sessionsAPI.activateCard(sessionId, cardId);
       const updatedIds = [...activeCardIds, cardId];
@@ -56,83 +64,92 @@ function ActiveCardsPanel({ sessionId, activeCardIds = [], onCardsChange }) {
     }
   };
 
-  const availableCards = allCards.filter(card => !activeCardIds.includes(card.id));
+  // Drag and drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    try {
+      const cardData = JSON.parse(e.dataTransfer.getData('application/json'));
+      if (cardData && cardData.id) {
+        handleActivateCard(cardData.id);
+      }
+    } catch (error) {
+      console.error('Failed to process dropped card:', error);
+    }
+  };
 
   return (
-    <div className="h-full flex flex-col bg-gray-800 border-l border-gray-700">
-      <div className="p-4 border-b border-gray-700">
-        <h2 className="text-lg font-bold">Active Cards</h2>
-        <p className="text-xs text-gray-400 mt-1">
+    <div
+      className={`h-full flex flex-col bg-gray-800 border-l border-gray-700 transition-colors ${
+        isDragOver ? 'bg-blue-900/20 border-blue-500' : ''
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <div className="p-3 border-b border-gray-700">
+        <h3 className="text-base font-semibold">Active Cards</h3>
+        <p className="text-xs text-gray-400">
           {activeCards.length} card{activeCards.length !== 1 ? 's' : ''} active
         </p>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+      <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {activeCards.length === 0 ? (
-          <div className="text-center text-gray-400 text-sm mt-8">
-            No active cards.<br />
-            Click below to add cards.
+          <div className={`text-center py-8 text-sm border-2 border-dashed rounded-lg transition-colors ${
+            isDragOver ? 'border-blue-500 text-blue-400' : 'border-gray-600 text-gray-400'
+          }`}>
+            {isDragOver ? (
+              'Drop card here'
+            ) : (
+              <>
+                Drop cards here<br />
+                <span className="text-xs">or use + Add Cards below</span>
+              </>
+            )}
           </div>
         ) : (
           activeCards.map(card => (
             <div
               key={card.id}
-              className="bg-gray-700 rounded-lg p-3 hover:bg-gray-600 transition"
+              className={`flex items-center justify-between px-3 py-2 bg-gray-700 border-l-4 ${RARITY_COLORS[card.rarity]} rounded hover:bg-gray-600 transition`}
             >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-2 flex-1">
-                  <span className="text-lg">{TYPE_ICONS[card.type]}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm truncate">{card.name}</div>
-                    <div className="text-xs text-gray-400">{card.type}</div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleDeactivateCard(card.id)}
-                  className="text-red-400 hover:text-red-300 text-sm ml-2"
-                  title="Deactivate card"
-                >
-                  ✕
-                </button>
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="text-sm">{TYPE_ICONS[card.type]}</span>
+                <span className="font-medium text-sm truncate">{card.name}</span>
               </div>
+              <button
+                onClick={() => handleDeactivateCard(card.id)}
+                className="text-red-400 hover:text-red-300 text-sm ml-2 flex-shrink-0"
+                title="Deactivate card"
+              >
+                ×
+              </button>
             </div>
           ))
         )}
       </div>
 
-      <div className="p-4 border-t border-gray-700">
-        <button
-          onClick={() => setShowCardSelector(!showCardSelector)}
-          className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-md text-sm font-semibold transition"
-        >
-          {showCardSelector ? 'Hide Cards' : '+ Add Cards'}
-        </button>
+      {isDragOver && activeCards.length > 0 && (
+        <div className="mx-2 mb-2 py-3 text-center text-sm border-2 border-dashed border-blue-500 rounded-lg text-blue-400 bg-blue-900/20">
+          Drop to add card
+        </div>
+      )}
 
-        {showCardSelector && (
-          <div className="mt-4 max-h-64 overflow-y-auto space-y-2">
-            {availableCards.length === 0 ? (
-              <div className="text-center text-gray-400 text-sm py-4">
-                All cards are active
-              </div>
-            ) : (
-              availableCards.map(card => (
-                <button
-                  key={card.id}
-                  onClick={() => handleActivateCard(card.id)}
-                  className="w-full bg-gray-700 hover:bg-gray-600 rounded-lg p-2 text-left transition"
-                >
-                  <div className="flex items-center space-x-2">
-                    <span>{TYPE_ICONS[card.type]}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm truncate">{card.name}</div>
-                      <div className="text-xs text-gray-400">{card.type} • {card.rarity}</div>
-                    </div>
-                  </div>
-                </button>
-              ))
-            )}
-          </div>
-        )}
+      <div className="p-2 border-t border-gray-700 text-xs text-gray-500 text-center">
+        Drag from Card Library to add
       </div>
     </div>
   );

@@ -3,10 +3,9 @@ import Card from '../models/Card.js';
 import StoryHistory from '../models/StoryHistory.js';
 import PromptBuilder from '../services/PromptBuilder.js';
 import StoryMemory from '../services/StoryMemory.js';
-import OpenAIService from '../services/OpenAIService.js';
+import llmService from '../services/LLMService.js';
 
 const promptBuilder = new PromptBuilder();
-const openaiService = new OpenAIService();
 
 export const generateStoryTurn = async (req, res) => {
   try {
@@ -26,7 +25,7 @@ export const generateStoryTurn = async (req, res) => {
 
     const activeCards = await Card.getCardsByIds(session.active_cards);
     const storyMemory = StoryMemory.fromJSON(session.story_memory);
-    const systemPrompt = promptBuilder.buildSystemPrompt(activeCards, storyMemory);
+    const systemPrompt = await promptBuilder.buildSystemPrompt(activeCards, null, storyMemory);
 
     const history = await StoryHistory.getBySessionId(sessionId);
     const recentHistory = history.slice(-3).flatMap(h => [
@@ -34,13 +33,13 @@ export const generateStoryTurn = async (req, res) => {
       { role: 'assistant', content: h.llm_response }
     ]);
 
-    const { content: llmResponse, usage } = await openaiService.generateStoryResponse(
+    const { content: llmResponse, usage } = await llmService.generateStoryResponse(
       systemPrompt,
       playerInput,
       recentHistory
     );
 
-    const keyEvent = await openaiService.extractKeyEvent(llmResponse);
+    const keyEvent = await llmService.extractKeyEvent(llmResponse);
     storyMemory.addEvent(keyEvent);
 
     await Session.update(sessionId, {
@@ -95,7 +94,7 @@ export const getSystemPrompt = async (req, res) => {
 
     const activeCards = await Card.getCardsByIds(session.active_cards);
     const storyMemory = StoryMemory.fromJSON(session.story_memory);
-    const systemPrompt = promptBuilder.buildSystemPrompt(activeCards, storyMemory);
+    const systemPrompt = await promptBuilder.buildSystemPrompt(activeCards, null, storyMemory);
     const tokenReport = promptBuilder.getTokenReport(systemPrompt, activeCards);
 
     res.json({

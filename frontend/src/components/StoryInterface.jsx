@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { storyAPI } from '../services/api';
 
-function StoryInterface({ sessionId }) {
+function StoryInterface({ sessionId, onStoryUpdate }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -59,6 +59,15 @@ function StoryInterface({ sessionId }) {
 
       setMessages(prev => [...prev, assistantMessage]);
       setTokenInfo(tokenReport);
+
+      // Notify parent of story update with debug data
+      if (onStoryUpdate) {
+        onStoryUpdate({
+          storyMemory: response.data.data.storyMemory,
+          questState: response.data.data.questState,
+          inventory: response.data.data.inventory
+        });
+      }
     } catch (error) {
       console.error('Failed to generate story:', error);
       setMessages(prev => [...prev, {

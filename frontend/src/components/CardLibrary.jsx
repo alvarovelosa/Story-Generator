@@ -5,7 +5,7 @@ import CardItem from './CardItem';
 
 function CardLibrary({ onCardSelect, mode = 'builder' }) {
   const { cards, setCards } = useStore();
-  const [filter, setFilter] = useState({ type: 'all', rarity: 'all' });
+  const [filter, setFilter] = useState({ type: 'all', rarity: 'all', source: 'all' });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,6 +25,12 @@ function CardLibrary({ onCardSelect, mode = 'builder' }) {
   };
 
   const handleDelete = async (cardId) => {
+    const card = cards.find(c => c.id === cardId);
+    if (card && (card.source === 'system' || card.source === 'default')) {
+      alert('System and default cards cannot be deleted.');
+      return;
+    }
+
     if (!window.confirm('Are you sure you want to delete this card?')) return;
 
     try {
@@ -32,17 +38,20 @@ function CardLibrary({ onCardSelect, mode = 'builder' }) {
       useStore.getState().removeCard(cardId);
     } catch (error) {
       console.error('Failed to delete card:', error);
+      alert(error.response?.data?.error || 'Failed to delete card');
     }
   };
 
   const filteredCards = cards.filter(card => {
     if (filter.type !== 'all' && card.type !== filter.type) return false;
     if (filter.rarity !== 'all' && card.rarity !== filter.rarity) return false;
+    if (filter.source !== 'all' && card.source !== filter.source) return false;
     return true;
   });
 
   const cardTypes = ['all', 'Character', 'Location', 'World', 'Time', 'Mood'];
   const rarities = ['all', 'Common', 'Bronze', 'Silver', 'Gold'];
+  const sources = ['all', 'user', 'system', 'default', 'auto_generated'];
 
   if (loading) {
     return (
@@ -88,6 +97,21 @@ function CardLibrary({ onCardSelect, mode = 'builder' }) {
             {rarities.map(rarity => (
               <option key={rarity} value={rarity}>
                 {rarity === 'all' ? 'All Rarities' : rarity}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-sm text-gray-400 mr-2">Source:</label>
+          <select
+            value={filter.source}
+            onChange={(e) => setFilter(prev => ({ ...prev, source: e.target.value }))}
+            className="px-3 py-1 bg-gray-700 border border-gray-600 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            {sources.map(source => (
+              <option key={source} value={source}>
+                {source === 'all' ? 'All Sources' : source === 'auto_generated' ? 'Auto' : source.charAt(0).toUpperCase() + source.slice(1)}
               </option>
             ))}
           </select>

@@ -4,7 +4,14 @@
       "Bash(mkdir:*)",
       "Bash(npm install)",
       "Bash(npm run init-db:*)",
-      "Bash(npm run dev:*)"
+      "Bash(npm run dev:*)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(dir \"c:\\\\Users\\\\alvar\\\\OneDrive\\\\APPS\\\\Story Generator\\\\backend\" /s /b)",
+      "Bash(findstr:*)",
+      "Bash(node:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": []

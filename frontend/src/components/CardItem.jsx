@@ -13,9 +13,18 @@ const TYPE_ICONS = {
   'Mood': '🎭'
 };
 
+const SOURCE_BADGES = {
+  'system': { label: 'SYSTEM', color: 'bg-purple-600' },
+  'default': { label: 'DEFAULT', color: 'bg-blue-600' },
+  'auto_generated': { label: 'AUTO', color: 'bg-green-600' },
+  'user': null // No badge for user cards
+};
+
 function CardItem({ card, onClick, onDelete, mode = 'builder' }) {
   const rarityColor = RARITY_COLORS[card.rarity] || RARITY_COLORS['Common'];
   const typeIcon = TYPE_ICONS[card.type] || '📄';
+  const sourceBadge = SOURCE_BADGES[card.source];
+  const isSystemOrDefault = card.source === 'system' || card.source === 'default';
 
   const truncateText = (text, maxLength = 100) => {
     if (text.length <= maxLength) return text;
@@ -31,7 +40,14 @@ function CardItem({ card, onClick, onDelete, mode = 'builder' }) {
         <div className="flex items-center space-x-2">
           <span className="text-2xl">{typeIcon}</span>
           <div>
-            <h3 className="font-bold text-lg">{card.name}</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-lg">{card.name}</h3>
+              {sourceBadge && (
+                <span className={`px-1.5 py-0.5 text-[10px] font-semibold rounded ${sourceBadge.color} text-white`}>
+                  {sourceBadge.label}
+                </span>
+              )}
+            </div>
             <div className="flex items-center space-x-2 text-xs text-gray-400">
               <span>{card.type}</span>
               <span>•</span>
@@ -41,7 +57,7 @@ function CardItem({ card, onClick, onDelete, mode = 'builder' }) {
             </div>
           </div>
         </div>
-        {onDelete && mode === 'builder' && (
+        {onDelete && mode === 'builder' && !isSystemOrDefault && (
           <button
             onClick={(e) => {
               e.stopPropagation();
